@@ -9,14 +9,30 @@
 # the Python interpreter will load our program,
 # but it will execute nothing yet.
 # --------------------------------------------------------
-
+import sys
 import json
 
 # ------------------------------------------
 # FUNCTION my_main
 # ------------------------------------------
 def my_main(dataset_dir, result_dir, percentage_f):
-    pass
+  # load as text file and use json.loads(string).. return python dictionary#
+  # json loads converts python dicitonary into string
+    
+    # Load the dataset
+    datasetRDD = sc.textFile(dataset_dir)
+    
+    # Load json as 
+    pythonDictionary = datasetRDD.map(lambda x: json.loads(x))
+    
+    #mappedRDD = 
+    
+    # Print the results
+    for each in pythonDictionary.collect():
+      print(each)
+  
+    #cuisine (evaluation, points)
+    #end - Hamburgers (1675, 107, 11190, 6.676610978...)
 
 # ---------------------------------------------------------------
 #           PYTHON EXECUTION
