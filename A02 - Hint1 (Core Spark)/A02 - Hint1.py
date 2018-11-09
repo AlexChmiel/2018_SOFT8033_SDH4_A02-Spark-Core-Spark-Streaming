@@ -11,28 +11,95 @@
 # --------------------------------------------------------
 import sys
 import json
+from __future__ import division
 
+
+# ------------------------------------------
+# FUNCTION my_mapper
+# ------------------------------------------
+def my_mapper(line):
+  # 1. Set up variables for the following structure: (cuisine, (num_of_reviews, num_negative_reviews, num_points))
+  review = line["evaluation"]
+  points = int(line["points"])
+  cuisine = line["cuisine"]
+  num_of_reviews = 1 # This is going to be 1 as each line read in is a review.
+  num_negative_reviews = 0
+  num_points = 0
+  
+  # 2. Check if review is negative, if it is substract points. If positive, add points.
+  if(review.lower() == "negative"):
+    num_negative_reviews += 1
+    num_points = num_points - points
+  elif(review.lower() == "positive"):
+    num_points = num_points + points
+  
+  # 3. Return the tuple.
+  return (cuisine, (num_of_reviews, num_negative_reviews, num_points))
+
+
+# ------------------------------------------
+# FUNCTION my_map_filter
+# ------------------------------------------
+def my_map_filter(line, average_per_cuisine):
+  cuisine = line[0]
+  num_of_reviews = line[1][0]
+  num_negative_reviews = line[1][1]
+  num_points = line[1][2]
+  if(num_negative_reviews != 0):
+    percentage_negative = (num_negative_reviews / num_of_reviews) * 100.0 
+  else:
+    percentage_negative=0
+  if (num_of_reviews <= average_per_cuisine or percentage_negative >= percentage_f):
+    return ""
+  else:
+    return (cuisine, (num_of_reviews, num_negative_reviews, num_points, (num_points/num_of_reviews)))
+  
+  
 # ------------------------------------------
 # FUNCTION my_main
 # ------------------------------------------
 def my_main(dataset_dir, result_dir, percentage_f):
-  # load as text file and use json.loads(string).. return python dictionary#
-  # json loads converts python dicitonary into string
-    
-    # Load the dataset
+  
+    # Load the dataset.
     datasetRDD = sc.textFile(dataset_dir)
     
-    # Load json as 
+    # Load json as python dictionary.
     pythonDictionary = datasetRDD.map(lambda x: json.loads(x))
     
-    #mappedRDD = 
+    # Map by (cuisine,(num_of_reviews, num_of_negative_reviews)).
+    mappedRDD = pythonDictionary.map(my_mapper)
+     
+    # C - Reduce by key.. output = (u'Hamburgers', (1676, 107, 11190)).
+    # Caching this RDD because we will be reusing it later for part 3.
+    reducedRDD = mappedRDD.reduceByKey(lambda x, y: (x[0] + y[0], x[1] + y[1], x[2] +y[2])).cache()
+    
+    # Get total number of cuisines.
+    num_cuisines = reducedRDD.count()
+    
+    # Map by reviews.
+    average_cuisineRDD = reducedRDD.map(lambda f: f[1][0])
+    
+    # Reduce to get total reviews.
+    total_num_cuisines = average_cuisineRDD.reduce(lambda x , y : x + y)
+   
+    # A- Calculate average per cuisine.
+    average_per_cuisine = (total_num_cuisines/num_cuisines)
+
+    # C' - remove RDD entries that don't meet 
+    # i) total amount reviews > average_per_cuisine
+    # ii) percentage of bad reviews <  percentage_f
+    filteredRDD = reducedRDD.map(lambda k: my_map_filter(k, average_per_cuisine))
+    
+    # Remove empty RDD's
+    cleanedRDD = filteredRDD.filter(lambda x: x is not None).filter(lambda x: x != "")
+    
+    # Sort by points in descending order
+    sortedRDD = cleanedRDD.sortBy(lambda x: -x[1][2])
     
     # Print the results
-    for each in pythonDictionary.collect():
-      print(each)
-  
-    #cuisine (evaluation, points)
-    #end - Hamburgers (1675, 107, 11190, 6.676610978...)
+    #for each in cleanedRDD.collect():
+    #  print(each)
+    sortedRDD.saveAsTextFile(result_dir)
 
 # ---------------------------------------------------------------
 #           PYTHON EXECUTION
