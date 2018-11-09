@@ -8,7 +8,10 @@ MongoDB is perhaps the most popular NoSQL database. Its documentation includes a
 
 GOAL.  
  
-1. Given the entire dataset (16 files), aggregate the following info per type of cuisine C  Total amount of reviews.   Total amount of negative reviews.   Total amount of points. To compute this, the points of each positive review are count as +points and the ones each negative are count as -points.  
+1. Given the entire dataset (16 files), aggregate the following info per type of cuisine C 
+- Total amount of reviews.  
+- Total amount of negative reviews.  
+- Total amount of points. To compute this, the points of each positive review are count as +points and the ones each negative are count as -points.  
  
 The RDD is of type: (String, (String, int, int, int))         Example: (u'Donuts', (16, 0, 137)) 
  
